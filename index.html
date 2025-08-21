@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Pet Virtual Simulation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="mainMenu" class="menu">
+        <h1>🐍 Snake Pet</h1>
+        <p>¡Bienvenido a tu mascota serpiente virtual!</p>
+
+        <p>Hecho con amor &lt;3</p>
+
+        <button class="menu-button" onclick="startFeedMode()">Modo Alimentar</button>
+        <button class="menu-button" onclick="startPlayMode()">Modo jugar (Coming Soon)</button>
+        <button class="menu-button" onclick="openCustomization()">Modo Personalizar</button>
+    </div>
+
+    <div id="feedMode" class="hidden">
+        <button class="back-button" onclick="backToMenu()">←Volver al menú</button>
+        <div class="ui">Alimenta a tu serpiente! Movete cerca de la comida usando el mouse.</div>
+        <div class="stats">
+            <div>Hambre: <span id="hunger">50</span>%</div>
+            <div>Felicidad: <span id="happiness">50</span>%</div>
+            <div>Tamaño: <span id="size">25</span></div>
+        </div>
+    </div>
+
+
+
+    <!-- Customize Screen HTML -->
+<div id="customizeScreen" class="hidden">
+    <button class="back-button" onclick="backToMenuFromCustomize()">← Volver al menú</button>
+    
+    <div class="customize-container">
+        <!-- Preview Window -->
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <div class="preview-window">
+                <canvas id="previewCanvas" width="300" height="200"></canvas>
+                <div class="preview-stats">
+                    <div>Estilo actual: <span id="currentStyle">Por Defecto</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customization Options -->
+        <div class="customization-panel">
+            <div class="customize-section">
+                <h3>🎨 Colores</h3>
+                <div class="color-grid">
+                    <div class="color-swatch" data-color="default" data-primary="#4CAF50" data-secondary="#66BB6A" data-dark="#388E3C">
+                        <div class="color-preview" style="background: #4CAF50;"></div>
+                        <span>Default</span>
+                    </div>
+                    <div class="color-swatch" data-color="blue" data-primary="#2196F3" data-secondary="#64B5F6" data-dark="#1976D2">
+                        <div class="color-preview" style="background: #2196F3;"></div>
+                        <span>Ocean Blue</span>
+                    </div>
+                    <div class="color-swatch" data-color="red" data-primary="#F44336" data-secondary="#EF5350" data-dark="#C62828">
+                        <div class="color-preview" style="background: #F44336;"></div>
+                        <span>Fire Red</span>
+                    </div>
+                    <div class="color-swatch" data-color="purple" data-primary="#9C27B0" data-secondary="#BA68C8" data-dark="#7B1FA2">
+                        <div class="color-preview" style="background: #9C27B0;"></div>
+                        <span>Royal Purple</span>
+                    </div>
+                    <div class="color-swatch locked" data-color="gold" data-primary="#FFD700" data-secondary="#FFE55C" data-dark="#FFC107">
+                        <div class="color-preview" style="background: #FFD700;"></div>
+                        <span>Golden</span>
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                    <div class="color-swatch locked" data-color="rainbow" data-primary="#FF6B6B" data-secondary="#4ECDC4" data-dark="#45B7AA">
+                        <div class="color-preview rainbow-gradient"></div>
+                        <span>Rainbow</span>
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="customize-section">
+                <h3>🎯 Patterns</h3>
+                <div class="pattern-grid">
+                    <button class="pattern-btn active" data-pattern="solid">
+                        <div class="pattern-preview solid-pattern"></div>
+                        Solid
+                    </button>
+                    <button class="pattern-btn" data-pattern="striped">
+                        <div class="pattern-preview striped-pattern"></div>
+                        Striped
+                    </button>
+                    <button class="pattern-btn" data-pattern="spotted">
+                        <div class="pattern-preview spotted-pattern"></div>
+                        Spotted
+                    </button>
+                    <button class="pattern-btn locked" data-pattern="gradient">
+                        <div class="pattern-preview gradient-pattern"></div>
+                        Gradient
+                        <div class="lock-icon">🔒</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="customize-section">
+                <h3>👓 Accessorios</h3>
+                <div class="accessory-grid">
+                    <button class="accessory-btn" data-accessory="none">
+                        <div class="accessory-icon">👤</div>
+                        None
+                    </button>
+                    <button class="accessory-btn" data-accessory="hat">
+                        <div class="accessory-icon">🎩</div>
+                        Top Hat
+                    </button>
+                    <button class="accessory-btn" data-accessory="glasses">
+                        <div class="accessory-icon">👓</div>
+                        Glasses
+                    </button>
+                    <button class="accessory-btn" data-accessory="crown">
+                        <div class="accessory-icon">👑</div>
+                        Crown
+                    </button>
+                    <button class="accessory-btn locked" data-accessory="sunglasses">
+                        <div class="accessory-icon">🕶️</div>
+                        Sunglasses
+                        <div class="lock-icon">🔒</div>
+                    </button>
+                    <button class="accessory-btn locked" data-accessory="bow">
+                        <div class="accessory-icon">🎀</div>
+                        Bow Tie
+                        <div class="lock-icon">🔒</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Unlock Requirements -->
+            <div class="unlock-info">
+                <h4>🔓 Unlock Requirements</h4>
+                <h3>(Esto todavía no funciona, así que podés ver y usar todos los accesorios)</h3>
+                <div class="unlock-item">
+                    <span>Golden Color:</span> Feed snake 50 times
+                </div>
+                <div class="unlock-item">
+                    <span>Rainbow Color:</span> Reach happiness 100%
+                </div>
+                <div class="unlock-item">
+                    <span>Gradient Pattern:</span> Snake size 40+
+                </div>
+                <div class="unlock-item">
+                    <span>Sunglasses:</span> Play mode high score 1000+
+                </div>
+                <div class="unlock-item">
+                    <span>Bow Tie:</span> Keep snake happy for 7 days
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>
