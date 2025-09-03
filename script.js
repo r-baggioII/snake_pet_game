@@ -51,6 +51,8 @@ var canvas, ctx;
 
         // Play mode instance
         var snakeRaceGame = null;
+        var raceKeyDown = null;
+        var raceKeyUp = null;
 
         function init() {
             canvas = document.getElementById("gameCanvas");
@@ -70,18 +72,6 @@ var canvas, ctx;
                     mousePos = getMousePos(canvas, evt);
                 }
             }, false);
-
-            document.addEventListener('keydown', function(e) {
-                if (gameMode === 'play' && snakeRaceGame) {
-                    snakeRaceGame.handleKeyDown(e);
-                }
-            });
-
-            document.addEventListener('keyup', function(e) {
-                if (gameMode === 'play' && snakeRaceGame) {
-                    snakeRaceGame.handleKeyUp(e);
-                }
-            });
 
             // Initialize snake position
             x[0] = canvas.width / 2;
@@ -732,13 +722,16 @@ var canvas, ctx;
         function startPlayMode() {
             gameMode = 'play';
             document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('feedMode').classList.add('hidden');
             var overlay = document.getElementById('playOverlay');
             if (overlay) overlay.classList.add('hidden');
-            if (!snakeRaceGame) {
-                snakeRaceGame = new SnakeRaceGame(ctx, canvas);
-            } else {
-                snakeRaceGame.reset();
-            }
+
+            snakeRaceGame = new SnakeRaceGame(ctx, canvas);
+
+            raceKeyDown = snakeRaceGame.handleKeyDown.bind(snakeRaceGame);
+            raceKeyUp = snakeRaceGame.handleKeyUp.bind(snakeRaceGame);
+            document.addEventListener('keydown', raceKeyDown);
+            document.addEventListener('keyup', raceKeyUp);
         }
 
         function backToMenu() {
@@ -752,9 +745,11 @@ var canvas, ctx;
             currentFood = null;
             foodSpawnTimer = 0;
 
-            if (snakeRaceGame) {
-                snakeRaceGame.gameOver = true;
-            }
+            if (raceKeyDown) document.removeEventListener('keydown', raceKeyDown);
+            if (raceKeyUp) document.removeEventListener('keyup', raceKeyUp);
+            raceKeyDown = null;
+            raceKeyUp = null;
+            snakeRaceGame = null;
         }
 
         // Save/Load functions
