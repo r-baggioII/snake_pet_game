@@ -98,6 +98,33 @@ body {
         display: none;
     }
 
+    /* Play mode overlay */
+    #playOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 40;
+        color: #fff;
+    }
+
+    #playOverlay.hidden {
+        display: none;
+    }
+
+    #playOverlay .results-box {
+        background: #222;
+        padding: 20px 40px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
 
 
 /* Customize Screen Styles */

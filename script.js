@@ -49,6 +49,9 @@ var canvas, ctx;
             bug: '#4B0082'
         };
 
+        // Play mode instance
+        var snakeRaceGame = null;
+
         function init() {
             canvas = document.getElementById("gameCanvas");
             ctx = canvas.getContext('2d');
@@ -67,6 +70,18 @@ var canvas, ctx;
                     mousePos = getMousePos(canvas, evt);
                 }
             }, false);
+
+            document.addEventListener('keydown', function(e) {
+                if (gameMode === 'play' && snakeRaceGame) {
+                    snakeRaceGame.handleKeyDown(e);
+                }
+            });
+
+            document.addEventListener('keyup', function(e) {
+                if (gameMode === 'play' && snakeRaceGame) {
+                    snakeRaceGame.handleKeyUp(e);
+                }
+            });
 
             // Initialize snake position
             x[0] = canvas.width / 2;
@@ -143,9 +158,12 @@ var canvas, ctx;
                 
                 // Draw head last (on top)
                 drawArcadeHead(x[0], y[0], x[1], y[1]);
-                
+
                 // Update stats display
                 updateStatsDisplay();
+            } else if (gameMode === 'play' && snakeRaceGame) {
+                snakeRaceGame.update();
+                snakeRaceGame.draw();
             }
 
             requestAnimationFrame(animate);
@@ -488,6 +506,216 @@ var canvas, ctx;
             y[i] = yin - Math.sin(angle) * segLength;
         }
 
+        // Rectangle collision helper
+        function rectIntersect(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        // Snake Race mini game
+        class SnakeRaceGame {
+            constructor(ctx, canvas) {
+                this.ctx = ctx;
+                this.canvas = canvas;
+                this.reset();
+            }
+
+            reset() {
+                this.groundY = this.canvas.height - 80;
+                this.snake = { x: 100, y: this.groundY - 30, width: 60, height: 30, vy: 0, isJumping: false, isDucking: false };
+                this.gravity = 0.8;
+                this.obstacles = [];
+                this.fruits = [];
+                this.spawnTimer = 0;
+                this.fruitTimer = 0;
+                this.score = 0;
+                this.energy = 100;
+                this.startTime = Date.now();
+                this.gameOver = false;
+                this.ended = false;
+            }
+
+            handleKeyDown(e) {
+                if (e.key === 'ArrowUp' && !this.snake.isJumping) {
+                    this.snake.isJumping = true;
+                    this.snake.vy = -15;
+                }
+                if (e.key === 'ArrowDown' && !this.snake.isJumping) {
+                    this.snake.isDucking = true;
+                }
+            }
+
+            handleKeyUp(e) {
+                if (e.key === 'ArrowDown') {
+                    this.snake.isDucking = false;
+                }
+            }
+
+            spawnObstacle() {
+                var type = Math.random() < 0.5 ? 'ground' : 'high';
+                if (type === 'ground') {
+                    this.obstacles.push({ x: this.canvas.width + 20, y: this.groundY - 30, width: 30, height: 30 });
+                } else {
+                    this.obstacles.push({ x: this.canvas.width + 20, y: this.groundY - 80, width: 40, height: 30 });
+                }
+            }
+
+            spawnFruit() {
+                this.fruits.push({ x: this.canvas.width + 20, y: this.groundY - 40, size: 20 });
+            }
+
+            update() {
+                if (this.gameOver) return;
+
+                var elapsed = (Date.now() - this.startTime) / 1000;
+                if (elapsed >= 90) {
+                    this.gameOver = true;
+                    this.endGame();
+                }
+
+                if (this.snake.isJumping) {
+                    this.snake.y += this.snake.vy;
+                    this.snake.vy += this.gravity;
+                    if (this.snake.y >= this.groundY - this.snake.height) {
+                        this.snake.y = this.groundY - this.snake.height;
+                        this.snake.vy = 0;
+                        this.snake.isJumping = false;
+                    }
+                } else if (this.snake.isDucking) {
+                    this.snake.height = 15;
+                } else {
+                    this.snake.height = 30;
+                }
+
+                this.spawnTimer++;
+                this.fruitTimer++;
+                if (this.spawnTimer > 90) {
+                    this.spawnObstacle();
+                    this.spawnTimer = 0;
+                }
+                if (this.fruitTimer > 150) {
+                    this.spawnFruit();
+                    this.fruitTimer = 0;
+                }
+
+                this.obstacles.forEach(o => o.x -= 6);
+                this.fruits.forEach(f => f.x -= 6);
+                this.obstacles = this.obstacles.filter(o => o.x + o.width > 0);
+                this.fruits = this.fruits.filter(f => f.x + f.size > 0);
+
+                var snakeRect = { x: this.snake.x, y: this.snake.y, width: this.snake.width, height: this.snake.height };
+
+                for (var i = 0; i < this.obstacles.length; i++) {
+                    var o = this.obstacles[i];
+                    if (rectIntersect(snakeRect, o)) {
+                        this.obstacles.splice(i, 1);
+                        this.energy -= 20;
+                        break;
+                    }
+                }
+
+                for (var j = 0; j < this.fruits.length; j++) {
+                    var f = this.fruits[j];
+                    var fr = { x: f.x, y: f.y, width: f.size, height: f.size };
+                    if (rectIntersect(snakeRect, fr)) {
+                        this.fruits.splice(j, 1);
+                        this.score += 10;
+                        this.energy = Math.min(100, this.energy + 10);
+                        j--;
+                    }
+                }
+
+                this.score += 0.1;
+
+                if (this.energy <= 0) {
+                    this.energy = 0;
+                    this.gameOver = true;
+                    this.endGame();
+                }
+            }
+
+            drawSnake() {
+                var s = this.snake;
+                var centerY = s.y + s.height / 2;
+                var headX = s.x + s.width - segLength / 2;
+
+                for (var i = 0; i < 4; i++) {
+                    var segmentSize = s.height - i * 0.5;
+                    var segX = headX - (i + 1) * segLength;
+
+                    this.ctx.save();
+                    this.ctx.translate(segX, centerY);
+
+                    this.ctx.fillStyle = snakeColors.bodyPrimary;
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, segmentSize / 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    this.ctx.fillStyle = snakeColors.bodySecondary;
+                    this.ctx.beginPath();
+                    this.ctx.arc(-segmentSize / 4, -segmentSize / 4, segmentSize / 6, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    this.ctx.fillStyle = snakeColors.bodyDark;
+                    this.ctx.beginPath();
+                    this.ctx.arc(segmentSize / 4, segmentSize / 4, segmentSize / 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    this.ctx.restore();
+                }
+
+                drawArcadeHead(headX, centerY, headX - segLength, centerY);
+            }
+
+            draw() {
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillRect(0, this.groundY, this.canvas.width, 5);
+
+                this.ctx.fillStyle = '#8B4513';
+                this.obstacles.forEach(o => {
+                    this.ctx.fillRect(o.x, o.y, o.width, o.height);
+                });
+
+                this.ctx.fillStyle = '#FFD700';
+                this.fruits.forEach(f => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(f.x + f.size / 2, f.y + f.size / 2, f.size / 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
+                this.drawSnake();
+
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.font = '20px Arial';
+                this.ctx.fillText('Energía: ' + Math.floor(this.energy), 20, 30);
+                this.ctx.fillText('Puntuación: ' + Math.floor(this.score), 20, 60);
+            }
+
+            endGame() {
+                if (this.ended) return;
+                this.ended = true;
+                var state;
+                if (this.energy > 50 && this.score >= 50) {
+                    state = 'contenta';
+                } else if (this.energy <= 0) {
+                    state = 'cansada';
+                } else {
+                    state = 'hambrienta';
+                }
+                showPlayResults(Math.floor(this.score), state);
+            }
+        }
+
+        function showPlayResults(score, state) {
+            var overlay = document.getElementById('playOverlay');
+            if (!overlay) return;
+            document.getElementById('playScore').textContent = 'Puntuación: ' + score;
+            document.getElementById('playState').textContent = 'Estado: ' + state;
+            overlay.classList.remove('hidden');
+        }
+
         // Game mode functions
         function startFeedMode() {
             gameMode = 'feed';
@@ -502,21 +730,31 @@ var canvas, ctx;
         }
 
         function startPlayMode() {
-            alert("Play Mode coming soon!");
-        }
-
-        function openCustomization() {
-            alert("Customization coming soon!");
+            gameMode = 'play';
+            document.getElementById('mainMenu').classList.add('hidden');
+            var overlay = document.getElementById('playOverlay');
+            if (overlay) overlay.classList.add('hidden');
+            if (!snakeRaceGame) {
+                snakeRaceGame = new SnakeRaceGame(ctx, canvas);
+            } else {
+                snakeRaceGame.reset();
+            }
         }
 
         function backToMenu() {
             gameMode = 'menu';
             document.getElementById('feedMode').classList.add('hidden');
             document.getElementById('mainMenu').classList.remove('hidden');
-            
+            var overlay = document.getElementById('playOverlay');
+            if (overlay) overlay.classList.add('hidden');
+
             // Reset food
             currentFood = null;
             foodSpawnTimer = 0;
+
+            if (snakeRaceGame) {
+                snakeRaceGame.gameOver = true;
+            }
         }
 
         // Save/Load functions
