@@ -14,7 +14,7 @@
         <p>Hecho con amor &lt;3</p>
 
         <button class="menu-button" onclick="startFeedMode()">Modo Alimentar</button>
-        <button class="menu-button" onclick="startPlayMode()">Modo jugar (Coming Soon)</button>
+        <button class="menu-button" onclick="startPlayMode()">Modo Juego</button>
         <button class="menu-button" onclick="openCustomization()">Modo Personalizar</button>
     </div>
 
@@ -155,10 +155,18 @@
                     <span>Bow Tie:</span> Keep snake happy for 7 days
                 </div>
             </div>
-        </div>
-    </div>
+</div>
+</div>
 </div>
 
+    <div id="playOverlay" class="hidden">
+        <div class="results-box">
+            <h2>Fin de la carrera</h2>
+            <p id="playScore"></p>
+            <p id="playState"></p>
+            <button class="menu-button" onclick="backToMenu()">Volver al menú</button>
+        </div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
